@@ -6,11 +6,9 @@ services:
     runtime: python
     plan: free
     buildCommand: uv sync --locked --no-dev
-    startCommand: uv run --no-sync python bot.py
+    startCommand: uv run --no-sync bot.py
     envVars:
-      - key: MODELO
-        value: google:gemini-3.5-flash-lite
-      - key: GEMINI_API_KEY
+      - key: GEMINI_API_KEY_LOCAL
         sync: false # Render te la pide al crear el servicio; no va en el código
       - key: TELEGRAM_TOKEN
         sync: false

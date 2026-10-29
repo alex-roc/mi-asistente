@@ -6,10 +6,8 @@
 __pycache__/
 .pytest_cache/
 
-# Lo que el asistente escribe al usarse (cada persona tiene lo suyo)
-datos/conversaciones/
-datos/recuerdos/
-datos/tareas/
+# La base se crea desde datos/gastos.csv al usarse
+*.db
 
 # Sistema
 .DS_Store

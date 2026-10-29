@@ -1,71 +1,66 @@
 """Pruebas sin modelo real ni internet: uv run pytest
 
-Un modelo falso (FunctionModel) pide las tools que queremos, y comprobamos lo que hace el código:
-la memoria va a la persona correcta (deps) y nada se escribe sin aprobación.
+Un modelo falso (FunctionModel) pide la tool que queremos, y comprobamos lo que hace el código.
 """
 
 import os
 from types import SimpleNamespace
 
-os.environ.setdefault("GEMINI_API_KEY", "clave-de-prueba")  # para importar sin .env (no se llama a Gemini)
-os.environ.setdefault("TELEGRAM_TOKEN", "123:token-de-prueba")
+os.environ.setdefault("GEMINI_API_KEY_LOCAL", "clave-de-prueba")  # para importar sin .env (no se llama a Gemini)
 
-import asistente  # noqa: E402
-import bot  # noqa: E402
-import capacidades  # noqa: E402
 import pytest  # noqa: E402
 from pydantic_ai import ModelResponse, TextPart, ToolCallPart, ToolReturnPart  # noqa: E402
 from pydantic_ai.models.function import FunctionModel  # noqa: E402
 
+import asistente  # noqa: E402
+import bot  # noqa: E402
+import capacidades  # noqa: E402
+from config import settings  # noqa: E402
+
 
 @pytest.fixture(autouse=True)
-def datos_temporales(tmp_path, monkeypatch):
-    """Cada prueba escribe en una carpeta temporal, no en datos/."""
-    monkeypatch.setattr(capacidades, "DATOS", tmp_path)
-    monkeypatch.setattr(asistente, "CONVERSACIONES", tmp_path / "conversaciones")
+def base_temporal(tmp_path, monkeypatch):
+    """Cada prueba usa su propia gastos.db, no la de datos/."""
+    monkeypatch.setattr(capacidades, "DB", tmp_path / "gastos.db")
 
 
 def pide(tool: str, args: dict) -> FunctionModel:
     """Un modelo falso: la 1.ª vez pide la tool; cuando recibe su resultado, responde texto."""
 
     def responder(mensajes, info):
-        if isinstance(mensajes[-1].parts[-1], ToolReturnPart):
-            return ModelResponse(parts=[TextPart("Listo.")])
+        ultimo = mensajes[-1].parts[-1]
+        if isinstance(ultimo, ToolReturnPart):
+            return ModelResponse(parts=[TextPart(f"Resultado: {ultimo.content}")])
         return ModelResponse(parts=[ToolCallPart(tool, args)])
 
     return FunctionModel(responder)
 
 
-async def test_recordar_guarda_en_la_persona_de_deps(tmp_path):
-    with asistente.agente.override(model=pide("recordar", {"dato": "Es vegetariana"})):
-        r = await asistente.responder("ana", "Recuerda que soy vegetariana.")
-    assert r.texto == "Listo."
-    assert (tmp_path / "recuerdos" / "ana.txt").read_text(encoding="utf-8") == "Es vegetariana\n"
-    assert not (tmp_path / "recuerdos" / "beto.txt").exists()
+def test_consultar_gastos_sin_modelo():
+    gastos = capacidades.consultar_gastos("transporte")  # una tool es una función normal
+    assert gastos["total_bs"] == 67
 
 
-async def test_crear_tarea_espera_aprobacion(tmp_path):
-    tarea = tmp_path / "tareas" / "ana.txt"
-    with asistente.agente.override(model=pide("crear_tarea", {"titulo": "Estudiar", "fecha": "2030-05-20"})):
-        r = await asistente.responder("ana", "Anota estudiar el 20 de mayo.")
-        assert r.pendiente and "crear_tarea" in r.pendiente[0]
-        assert not tarea.exists()  # el modelo la pidió, pero no se escribió nada
-
-        r = await asistente.decidir("ana", aprobar=False)
-        assert not tarea.exists()  # rechazada: sigue sin escribirse
-
-        await asistente.responder("ana", "Anótala de nuevo.")
-        await asistente.decidir("ana", aprobar=True)
-    assert tarea.read_text(encoding="utf-8") == "2030-05-20 · Estudiar\n"
+async def test_registrar_gasto_escribe_en_la_base():
+    with asistente.asistente.override(model=pide("registrar_gasto", {
+        "fecha": "2030-05-14", "categoria": "ocio", "descripcion": "Teatro", "monto": 30,
+    })):
+        respuesta = await asistente.responder("Anota 30 Bs de teatro.")
+    assert "Gasto registrado" in respuesta
+    assert capacidades.consultar_gastos("ocio")["total_bs"] == 70  # 40 del CSV + 30
 
 
-async def test_decidir_sin_nada_pendiente():
-    r = await asistente.decidir("nadie", aprobar=True)
-    assert r.texto == "No hay nada pendiente."
+async def test_monto_negativo_no_se_guarda():
+    with asistente.asistente.override(model=pide("registrar_gasto", {
+        "fecha": "2030-05-14", "categoria": "ocio", "descripcion": "Error", "monto": -5,
+    })):
+        respuesta = await asistente.responder("Anota -5 Bs.")
+    assert "No se guardó" in respuesta
+    assert capacidades.consultar_gastos("ocio")["total_bs"] == 40
 
 
 async def test_chat_ajeno_se_rechaza_sin_llamar_al_modelo(monkeypatch):
-    monkeypatch.setenv("TELEGRAM_PERMITIDOS", "123")
+    monkeypatch.setattr(settings, "telegram_permitidos", "123")
     respuestas = []
 
     async def reply_text(texto):
@@ -77,13 +72,13 @@ async def test_chat_ajeno_se_rechaza_sin_llamar_al_modelo(monkeypatch):
     update = SimpleNamespace(
         effective_chat=SimpleNamespace(id=999), message=SimpleNamespace(text="hola", reply_text=reply_text)
     )
-    with asistente.agente.override(model=FunctionModel(modelo_prohibido)):
+    with asistente.asistente.override(model=FunctionModel(modelo_prohibido)):
         await bot.mensaje(update, None)
     assert "No autorizado" in respuestas[0] and "999" in respuestas[0]
 
 
 def test_permitidos(monkeypatch):
-    monkeypatch.setenv("TELEGRAM_PERMITIDOS", " 123, 456 ,")
-    assert bot.permitidos() == {"123", "456"}
-    monkeypatch.setenv("TELEGRAM_PERMITIDOS", "")
-    assert bot.permitidos() == set()  # vacío = nadie
+    monkeypatch.setattr(settings, "telegram_permitidos", " 123, 456 ,")
+    assert settings.permitidos == {"123", "456"}
+    monkeypatch.setattr(settings, "telegram_permitidos", "")
+    assert settings.permitidos == set()  # vacío = nadie
