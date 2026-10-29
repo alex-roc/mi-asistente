@@ -74,7 +74,8 @@ Abre tu bot en Telegram (el enlace `t.me/…_bot` que te dio BotFather) y pulsa 
 
 **3.3 · Autorízate**
 1. Detén el bot con Ctrl+C.
-2. Pon tu número en `.env`: `TELEGRAM_PERMITIDOS=123456789`. Para varias personas, sepáralas con comas.
+2. Pon ese número en `.env`: `TELEGRAM_PERMITIDOS=123456789`. Para varias personas, sepáralas con comas: `TELEGRAM_PERMITIDOS=123456789,987654321`.
+   > **No es tu número de teléfono.** Es el número que te dio `/start`: sin `+`, sin código de país y sin espacios.
 3. Ejecuta otra vez `uv run bot.py` y escríbele.
 
 > **¿Cualquiera puede escribirle a mi bot?** Cualquiera que encuentre su usuario puede *escribirle*: en Telegram no hay bots privados. Pero el bot solo *responde* a los números de `TELEGRAM_PERMITIDOS`. Al resto le contesta «No autorizado» **sin llamar al modelo**, así que no gastan tu cuota. Si la lista está vacía, no le responde a nadie.
