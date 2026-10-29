@@ -153,6 +153,8 @@ En Render, el mismo `bot.py` funciona con **webhook**: Telegram envía cada mens
   - un flujo con un grafo (S4).
 - **Dependencias:** `uv add nombre-paquete`, nunca a mano. Luego haz commit de `pyproject.toml` y `uv.lock`.
 
+> **Extra opcional:** si además quieres usar tu asistente como API HTTP, sigue [API.md](API.md). No hace falta para el trabajo final.
+
 ## 6 · Pide ayuda a una IA
 
 Este repositorio trae un **skill** con lo que vimos en el curso: reglas, recetas con el código de clase y una tabla de errores reales. Está en [`.agents/skills/asistente-pydantic-ai/`](.agents/skills/asistente-pydantic-ai/SKILL.md).
@@ -184,6 +186,7 @@ La IA te ayuda, pero el código es tuyo: entiende cada cambio antes de aceptarlo
 ├── capacidades.py      apis, consulta, registro y documentos  ← aquí van las tuyas
 ├── asistente.py        el agente y responder(mensaje)
 ├── bot.py              Telegram: /start, permitidos, polling o webhook
+├── api.py              extra opcional: la API HTTP (ver API.md)
 ├── datos/              gastos.csv y documentos/*.pdf (ficticios)
 ├── tests/              pruebas sin modelo real
 ├── pyproject.toml      dependencias (uv.lock las fija)
@@ -191,6 +194,7 @@ La IA te ayuda, pero el código es tuyo: entiende cada cambio antes de aceptarlo
 ├── .env.example        las variables, sin valores
 ├── render.yaml         atajo para Render (Blueprint)
 ├── TRABAJO_FINAL.md    qué se entrega y cómo se califica
+├── API.md              extra opcional: el asistente como API
 ├── AGENTS.md, CLAUDE.md  instrucciones para asistentes de IA
 └── .agents/skills/     el skill del curso
 ```

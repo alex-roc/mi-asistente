@@ -78,3 +78,13 @@ Las tools normales (`def`, con `httpx.get`) también sirven dentro del bot: Pyda
 | Render | Panel *Environment* |
 
 Antes de subir, `git status` no debe mostrar `.env`, y `git grep -nE "AIza[0-9A-Za-z_-]{30}"` no debe encontrar nada.
+
+## Extra no visto en clase: la API (`api.py`)
+
+Opcional: el trabajo final es el bot. Los pasos están en `API.md`, en la raíz.
+
+- `POST /chat` con `{"mensaje": "…"}` devuelve `{"texto": "…"}`, usando el mismo `await responder(mensaje)` que el bot.
+- **Autenticación:** `Authorization: Bearer <token>`, con los tokens en `API_TOKENS` (separados por coma, uno por persona; vacío = nadie). Sin token válido responde 401 **antes** de llamar al modelo, igual que `TELEGRAM_PERMITIDOS`. Nunca reutilices el token de Telegram.
+- **En tu equipo:** `uv run uvicorn api:app --reload` y `http://127.0.0.1:8000/docs` (botón *Authorize*).
+- **En Render:** un **segundo** Web Service del mismo repositorio, con el mismo Build y Start `uv run --no-sync uvicorn api:app --host 0.0.0.0 --port $PORT`. Variables: `GEMINI_API_KEY_LOCAL` y `API_TOKENS`. Un servicio escucha en un solo puerto, y el del bot ya lo usa el webhook: por eso son dos servicios.
+- **En las pruebas:** `httpx.AsyncClient(transport=httpx.ASGITransport(app=api.app))` con `await` (ver `tests/`). Con `TestClient` y un modelo real, la app corre en otro event loop y el cliente del modelo falla.

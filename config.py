@@ -36,9 +36,15 @@ class Settings(BaseSettings):
     telegram_token: SecretStr = SecretStr("")  # el token de @BotFather
     telegram_permitidos: str = ""  # números de chat separados por coma; vacío = nadie
 
+    api_tokens: SecretStr = SecretStr("")  # extra opcional (API.md): tokens de la API separados por coma; vacío = nadie
+
     @property
     def permitidos(self) -> set[str]:
         return {c.strip() for c in self.telegram_permitidos.split(",") if c.strip()}
+
+    @property
+    def tokens(self) -> set[str]:
+        return {t.strip() for t in self.api_tokens.get_secret_value().split(",") if t.strip()}
 
 
 def crear_modelo(settings: Settings) -> Model:

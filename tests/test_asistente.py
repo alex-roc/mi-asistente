@@ -8,10 +8,13 @@ from types import SimpleNamespace
 
 os.environ.setdefault("GEMINI_API_KEY_LOCAL", "clave-de-prueba")  # para importar sin .env (no se llama a Gemini)
 
+import httpx  # noqa: E402
 import pytest  # noqa: E402
+from pydantic import SecretStr  # noqa: E402
 from pydantic_ai import ModelResponse, TextPart, ToolCallPart, ToolReturnPart  # noqa: E402
 from pydantic_ai.models.function import FunctionModel  # noqa: E402
 
+import api  # noqa: E402
 import asistente  # noqa: E402
 import bot  # noqa: E402
 import capacidades  # noqa: E402
@@ -82,3 +85,35 @@ def test_permitidos(monkeypatch):
     assert settings.permitidos == {"123", "456"}
     monkeypatch.setattr(settings, "telegram_permitidos", "")
     assert settings.permitidos == set()  # vacío = nadie
+
+
+# ── Extra opcional: la API (API.md) ──
+
+
+async def post_chat(cuerpo: dict, token: str | None = None) -> httpx.Response:
+    """Llama a la API en el mismo proceso, sin servidor ni red."""
+    cabeceras = {"Authorization": f"Bearer {token}"} if token else {}
+    transporte = httpx.ASGITransport(app=api.app)
+    async with httpx.AsyncClient(transport=transporte, base_url="http://prueba") as cliente:
+        return await cliente.post("/chat", json=cuerpo, headers=cabeceras)
+
+
+async def test_api_sin_token_valido_no_llama_al_modelo(monkeypatch):
+    def modelo_prohibido(mensajes, info):
+        raise AssertionError("no debía llamarse al modelo")
+
+    with asistente.asistente.override(model=FunctionModel(modelo_prohibido)):
+        monkeypatch.setattr(settings, "api_tokens", SecretStr(""))
+        assert (await post_chat({"mensaje": "hola"}, "cualquiera")).status_code == 401  # vacío = nadie
+        monkeypatch.setattr(settings, "api_tokens", SecretStr("abc, def"))
+        assert (await post_chat({"mensaje": "hola"})).status_code == 401
+        assert (await post_chat({"mensaje": "hola"}, "xyz")).status_code == 401
+        assert (await post_chat({"mensaje": ""}, "abc")).status_code == 422  # Pydantic valida el pedido
+
+
+async def test_api_con_token_responde(monkeypatch):
+    monkeypatch.setattr(settings, "api_tokens", SecretStr("abc,def"))
+    with asistente.asistente.override(model=pide("consultar_gastos", {"categoria": "transporte"})):
+        r = await post_chat({"mensaje": "¿Cuánto gasté en transporte?"}, "def")
+    assert r.status_code == 200
+    assert "67" in r.json()["texto"]
