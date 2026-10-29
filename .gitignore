@@ -1,0 +1,15 @@
+# Secretos: nunca se suben
+.env
+
+# Entorno y caché de Python
+.venv/
+__pycache__/
+.pytest_cache/
+
+# Lo que el asistente escribe al usarse (cada persona tiene lo suyo)
+datos/conversaciones/
+datos/recuerdos/
+datos/tareas/
+
+# Sistema
+.DS_Store
