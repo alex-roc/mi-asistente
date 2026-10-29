@@ -5,9 +5,9 @@
 ## Qué haces
 
 1. **Haz funcionar el asistente de clase como bot de Telegram en Render**, con esta plantilla. Ya trae lo que vimos: APIs públicas, el contador de gastos en SQLite y la búsqueda en documentos con citas.
-2. **Hazlo tuyo.** Cambia lo que quieras y agrega algo:
+2. **Hazlo tuyo.** Ajusta a tus preferencias:
    - el tema y las instrucciones (para quién es y qué hace);
-   - tus datos (ficticios): otro CSV, otros PDFs;
+   - tus datos: otro CSV, otros PDFs;
    - una API nueva, otra tool u otra capability;
    - lo que vimos en las otras sesiones: búsqueda web (S2), un servidor MCP (S3), un flujo con un grafo (S4).
 
@@ -18,13 +18,11 @@
 
 ## Cómo se califica
 
-**Solo el funcionamiento.** El docente le escribe a tu bot y comprueba que:
+**Solo el funcionamiento.** 
 
 1. responde en Telegram desde Render;
-2. funciona lo de clase (o tu versión de eso);
-3. funciona lo que cambiaste o agregaste.
-
-No hay video ni informe. Más personalización que funciona es mejor nota.
+2. devuelve respuestas adecuadas
+3. lo personalizaste
 
 ## Antes de entregar
 
